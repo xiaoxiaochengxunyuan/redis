@@ -94,11 +94,11 @@ public class MyRedisKeyExpiredMessageDelegate implements MessageListener {
 	@Override
 	public void onMessage(Message message, byte[] arg1) {
 		try {
-            System.out.println("channel:" + new String(message.getChannel())
-                    + ",message:" + new String(message.getBody(), "utf-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+			System.out.println("channel:" + new String(message.getChannel())
+		        + ",message:" + new String(message.getBody(), "utf-8"));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
 	}
 }
 ```
