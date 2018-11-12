@@ -12,74 +12,74 @@
 ## redis配置
 而对超时的监听呢，并不需要自己发布，只有修改配置文件redis.conf中的：notify-keyspace-events Ex，默认为notify-keyspace-events ""
 
-    K    键空间通知，以__keyspace@<db>__为前缀
-    E    键事件通知，以__keysevent@<db>__为前缀
-    g    del , expipre , rename 等类型无关的通用命令的通知, ...
-    $    String命令
-    l    List命令
-    s    Set命令
-    h    Hash命令     z    有序集合命令
-    x    过期事件（每次key过期时生成）
-    e    驱逐事件（当key在内存满了被清除时生成）
-    A    g$lshzxe的别名，因此”AKE”意味着所有的事件
+  K    键空间通知，以__keyspace@<db>__为前缀
+  E    键事件通知，以__keysevent@<db>__为前缀
+  g    del , expipre , rename 等类型无关的通用命令的通知, ...
+  $    String命令
+  l    List命令
+  s    Set命令
+  h    Hash命令     z    有序集合命令
+  x    过期事件（每次key过期时生成）
+  e    驱逐事件（当key在内存满了被清除时生成）
+  A    g$lshzxe的别名，因此”AKE”意味着所有的事件
 
 ### 测试(windows)
 启动redis,启动命令窗口，切到**redis-cli.exe**对应的目录下，控制台输入redis-cli.exe
 
-		D:\Program Files (x86)\Redis-x64-3.2.100>redis-cli.exe
-		127.0.0.1:6379> psubscribe __keyevent@0__:expired
-		Reading messages... (press Ctrl-C to quit)
-		1) "psubscribe"
-		2) "__keyevent@0__:expired"
-		3) (integer) 1
+	D:\Program Files (x86)\Redis-x64-3.2.100>redis-cli.exe
+	127.0.0.1:6379> psubscribe __keyevent@0__:expired
+	Reading messages... (press Ctrl-C to quit)
+	1) "psubscribe"
+	2) "__keyevent@0__:expired"
+	3) (integer) 1
 
 在启动另外一个redis命令窗口
 
-		D:\Program Files (x86)\Redis-x64-3.2.100>redis-cli.exe
-		127.0.0.1:6379> set aa bb  EX 10
-		OK
-		127.0.0.1:6379> get aa
-		"bb"
-		...(10秒后)
-		127.0.0.1:6379> get aa
-		(nil)
+	D:\Program Files (x86)\Redis-x64-3.2.100>redis-cli.exe
+	127.0.0.1:6379> set aa bb  EX 10
+	OK
+	127.0.0.1:6379> get aa
+	"bb"
+	...(10秒后)
+	127.0.0.1:6379> get aa
+	(nil)
 
 此时第一个控制台显示
 
-		1) "pmessage"
-		2) "__keyevent@0__:expired"
-		3) "__keyevent@0__:expired"
-		4) "aa"
+	1) "pmessage"
+	2) "__keyevent@0__:expired"
+	3) "__keyevent@0__:expired"
+	4) "aa"
 显示以上结果，说明显示配置成功，#keyevent@**0** 中的0 代表0号库
 
 ## 在Java中的处理
 ### spring-application.xml 配置文件
 ```java
-  <!-- redis链接配置 -->
-  <bean id="jedisConnectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory" p:host-name="${redis.host}" p:port="${redis.port}" />
-	<bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate"
-		p:connection-factory-ref="jedisConnectionFactory">
-	</bean>
-	<!-- 监听实现类，监听key过期事件 -->
-	<bean id="messageListener" class="org.springframework.data.redis.listener.adapter.MessageListenerAdapter">
-	    <constructor-arg>
-	        <bean class="com.xxx.xxx.MyRedisKeyExpiredMessageDelegate" />
-	    </constructor-arg>
-  </bean>
-  <bean id="redisContainer" class="org.springframework.data.redis.listener.RedisMessageListenerContainer">
-      <property name="connectionFactory" ref="jedisConnectionFactory" />
-      <property name="messageListeners">
-          <map>
-              <entry key-ref="messageListener">
-                  <list>
-                      <bean class="org.springframework.data.redis.listener.PatternTopic">
-                          <constructor-arg value="__keyevent@0__:expired" />
-                      </bean>
-                  </list>
-              </entry>
-          </map>
-      </property>
-  </bean>
+<!-- redis链接配置 -->
+<bean id="jedisConnectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory" p:host-name="${redis.host}" p:port="${redis.port}" />
+<bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate"
+	p:connection-factory-ref="jedisConnectionFactory">
+</bean>
+<!-- 监听实现类，监听key过期事件 -->
+<bean id="messageListener" class="org.springframework.data.redis.listener.adapter.MessageListenerAdapter">
+    <constructor-arg>
+        <bean class="com.xxx.xxx.MyRedisKeyExpiredMessageDelegate" />
+    </constructor-arg>
+</bean>
+<bean id="redisContainer" class="org.springframework.data.redis.listener.RedisMessageListenerContainer">
+    <property name="connectionFactory" ref="jedisConnectionFactory" />
+    <property name="messageListeners">
+        <map>
+            <entry key-ref="messageListener">
+                <list>
+                    <bean class="org.springframework.data.redis.listener.PatternTopic">
+                        <constructor-arg value="__keyevent@0__:expired" />
+                    </bean>
+                </list>
+            </entry>
+        </map>
+    </property>
+</bean>
 	```
 
 ### MyRedisKeyExpiredMessageDelegate
